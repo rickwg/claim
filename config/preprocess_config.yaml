@@ -1,0 +1,60 @@
+# VindrMammo Preprocessing Configuration
+seed: 537205661
+created: SET_BY_DATA_GENERATION_SCRIPT
+scenario_name: vindrmammo-data
+# Input directory containing dicom/ and png/ subdirectories
+input_dir: vindrmammo_data
+
+# Output directory for processed images
+output_dir: artifacts/data/vindrmammo/preprocessed
+
+# Target image size [width, height]
+# Images will be resized maintaining aspect ratio and center-cropped
+target_size: [512, 512]
+
+# Maximum value for normalization according to Montoya et al. 2024
+# Pixel values will be clipped to this value and normalized to 0-255 uint8
+max_value: 3500.0
+
+# Number of parallel jobs (-1 = use all CPU cores)
+n_jobs: 4
+
+# Convert to RGB (3-channel) images
+# Set to true for diffusion models that require RGB input (e.g., Stable Diffusion)
+# Set to false for grayscale models
+to_rgb: false
+
+# Output directory for lesion masks
+# Masks are always generated for all images:
+#   - Images with findings get masks from bounding box annotations
+#   - Healthy images (no findings) get all-zero masks
+# If not specified, defaults to {output_dir}/masks
+mask_output_dir: artifacts/data/vindrmammo/masks
+
+# Filter images by finding category
+# Only images matching these categories will be processed.
+# Examples:
+#   - ['No Finding'] - Only healthy images
+#   - ['Mass'] - Only images with masses
+#   - ['Mass', 'Suspicious Calcification'] - Masses and calcifications
+#   - null - All images (no filtering)
+image_filter: null
+
+# Filter images by scanner manufacturer values from metadata.csv
+# Examples: ['SIEMENS'], ['Planmed'], ['SIEMENS', 'Planmed'], null
+manufacturer_filter: null
+
+# Filter by source PNG max pixel value before normalization
+# Example: 4095 keeps siemens15k-like images; null keeps all
+source_max_value_filter: null
+
+# Processing steps applied:
+# 1. Load PNG image (or DICOM if PNG doesn't exist)
+# 2. Read laterality from DICOM metadata
+# 3. Flip right-sided images horizontally to left
+# 4. Resize preserving aspect ratio to fit target_size
+# 5. Center crop to exact target_size
+# 6. Normalize to max_value and convert to uint8
+# 7. Optionally convert to RGB (if to_rgb is true)
+# 8. Save as PNG in output_dir
+# 9. Generate masks for all images (lesion masks or all-zero for healthy)

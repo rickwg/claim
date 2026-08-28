@@ -1,0 +1,15 @@
+BootStrap: docker
+From: debian:bookworm-slim
+
+%environment
+    export RCLONE_CONFIG=/config/rclone.conf
+
+%post
+    chmod 1777 /tmp
+    apt-get update
+    apt-get install -y --no-install-recommends ca-certificates rclone
+    rm -rf /var/lib/apt/lists/*
+    mkdir -p /config
+
+%runscript
+    exec rclone "$@"

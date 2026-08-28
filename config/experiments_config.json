@@ -1,0 +1,113 @@
+{
+  "seed": 537205661,
+  "created": "2025-04-16-10-39-44",
+  "artifacts_dir": "artifacts",
+  "project_dir": ".",
+  "experiment_name": "claim",
+  "data": {
+    "data_scenario": "ot-xai-data-2024-11-18-10-28-13",
+    "data_dir": "artifacts/data"
+  },
+  "training": {
+    "output_dir": "training",
+    "num_workers": 4,
+    "val_size": 0.2,
+    "device": "cuda",
+    "num_training_repetitions": 1,
+    "training_records": "training_records.jsonl",
+    "intermediate_training_records": "intermediate_training_records.jsonl",
+    "use_hyperparameter_tuning": true,
+    "hyperparameter_tuning": {
+      "batch_sizes": [
+        128,
+        256
+      ],
+      "learning_rates": [
+        0.1,
+        0.01,
+        0.001
+      ],
+      "weight_decays": [
+        0.0,
+        1e-06
+      ],
+      "lambda_gps": [
+        0.0,
+        1e-05,
+        1.0,
+        0.2,
+        -0.2
+      ],
+      "hidden_dims": [
+        64,
+        128,
+        256
+      ],
+      "num_hidden_layers": [
+        1,
+        2,
+        3
+      ]
+    },
+    "models": [
+      {
+        "dataset_type": "nonlinear_suppressor",
+        "model_name": "OTLipschitzDense",
+        "training_params": {
+          "num_classes": 2,
+          "batch_size": 128,
+          "epochs": 100,
+          "lr": 0.001,
+          "weight_decay": 0.0,
+          "lambda_gp": 1e-04
+        },
+        "model_params": {
+          "input_dim": 13,
+          "output_dim": 1,
+          "hidden_dim": 128,
+          "num_hidden_layers": 1
+        },
+        "encoder_params": {
+          "latent_dim": 2,
+          "input_dim": 2,
+          "hidden_dim": 128
+        }
+      }
+    ]
+  },
+    "xai": {
+      "output_dir": "xai",
+      "xai_records": "xai_records.jsonl",
+      "intermediate_xai_records": "intermediate_xai_records.jsonl",
+      "methods": [
+        "saliency",
+        "input_x_gradient",
+        "integrated_gradient"
+      ]
+    },
+  "xai_evaluation": {
+    "output_dir": "xai_evaluation",
+    "evaluation_records": "xai_evaluation_records.jsonl",
+    "intermediate_evaluation_records": "intermediate_evaluation_records.jsonl"
+  },
+  "analyses": {
+    "output_dir": "analyses",
+    "analyses": [
+      "_summary_explanation_performance_plot",
+      "_summary_explanation_performance_plot_low_dimensional_data",
+      "_explanation_performance_plot",
+      "_explanation_performance_plot_by_dataset",
+      "_explanation_plot",
+      "_explanation_per_feature_plot",
+      "_dataset_pairplot",
+      "_dataset_3d_plot",
+      "_model_generated_data_pairplot",
+      "_explanation_plot_tetris_global",
+      "explanation_plot_tetris_local"
+    ],
+    "dataset_types": {
+      "2d_suppressor": {},
+      "_nonlinear_suppressor": {}
+    }
+  }
+}

@@ -1,0 +1,93 @@
+# Consolidated exploration configuration
+# Usage: python exploration/run_exploration.py --config config/exploration.yaml
+
+# ============================================================================
+# GLOBAL
+# ============================================================================
+
+# Root output directory (a timestamped run_YYYYMMDD_HHMMSS subdir is created)
+output_dir: ./artifacts/exploration
+
+# Preprocessed mammogram source images
+input_dir: artifacts/data/vindrmammo/mame_preprocessed
+annotations_file: data/vindrmammo_data/finding_annotations.csv
+
+# Which anomaly types to generate and evaluate
+# Available: "masked_distortions", "generated_lesions"
+anomalies:
+  - masked_distortions
+  # - generated_lesions   # uncomment to enable (requires GPU + diffusion model)
+
+# PROCESSING
+num_images: 100   # Limit number of images (null = all)
+seed: null         # Random seed (null = non-deterministic)
+
+# ============================================================================
+# MASKED DISTORTIONS  (generate_masked_distortion.py)
+# ============================================================================
+masked_distortions:
+  transformations:
+    - twirl
+    - spherize
+
+  # Parameter lists for sweep (single value also accepted for backward compat)
+  # GIMP Twirl filter – angle in degrees
+  twirl_angles: [-90, -137, -200]
+
+  # GIMP Pinch filter – amount in % (negative = bulge, positive = dent)
+  spherize_amounts: [-25, -37, -55]
+
+  # Lesion diameter range in pixels
+  min_lesion_size: 60
+  max_lesion_size: 90
+
+# ============================================================================
+# GENERATED LESIONS  (generate_lesions.py)
+# ============================================================================
+generated_lesions:
+  model_id: Likalto4/inpainting_vindr_massbs16
+  device: cpu               # cuda or cpu
+  prompt: a mammogram with a lesion
+  num_inference_steps: 40
+  guidance_scale: 4.0
+  min_lesion_size: 20
+  max_lesion_size: 40
+
+# ============================================================================
+# VISUALIZATION
+# ============================================================================
+visualization:
+  figsize_distortions: [12, 4]
+  figsize_lesions: [24, 4]
+  dpi: 150
+  threshold: 10             # for lesion threshold view
+  seamless_padding: 5       # for lesion Poisson blending
+
+# ============================================================================
+# METRICS VISUALIZATION
+# ============================================================================
+metrics_visualization:
+  figsize_bar: [14, 6]
+  figsize_box: [14, 6]
+  figsize_radar: [8, 8]
+  figsize_heatmap: [10, 8]
+  figsize_spatial: [20, 4]
+  dpi: 150
+  num_spatial_samples: 3
+  
+  # Metrics to visualize (null = all available)
+  visualize_change_metrics:
+    - pixel_mae
+    - pixel_rmse
+    - pixel_max_diff
+    - sobel_mae
+    - laplacian_mae
+    - border_intensity_step_manip
+    - border_pixel_mae_manip
+    - border_intensity_step_diff
+    - border_pixel_mae_diff
+  
+  visualize_quality_metrics:
+    - ssim
+#    - histogram_dist
+#    - local_contrast_diff

@@ -1,0 +1,30 @@
+BootStrap: docker
+From: python:3.12-slim
+
+%files
+    uv.lock /workdir/uv.lock
+    pyproject.toml /workdir/pyproject.toml
+
+%environment
+    export UV_PROJECT_ENVIRONMENT=/opt/venv
+    export VIRTUAL_ENV=/opt/venv
+    export UV_LINK_MODE=copy
+
+%post
+    chmod 1777 /tmp
+    apt-get update
+    apt-get install curl git libx11-6 libglib2.0-0 libopencv-dev build-essential cmake libgtk-3-dev libcanberra-gtk3-module libtbbmalloc2 libjpeg-dev libpng-dev libtiff-dev gfortran ffmpeg ninja-build -y
+    mkdir /cargo
+    curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/cargo" sh
+    mkdir /workable
+    ls -lah /cargo
+
+    # Add to bin to path
+    echo "export PATH=/cargo:\$PATH" >> $APPTAINER_ENVIRONMENT
+
+    cd /workdir
+    UV_PROJECT_ENVIRONMENT=/opt/venv /cargo/uv sync --no-cache --extra data-download
+
+%runscript
+    cd /workdir
+    exec uv --no-cache run --no-sync data/main.py --data-dir=$1

@@ -1,0 +1,14 @@
+{
+  "seed": 537205661,
+  "created": "SET_BY_DATA_GENERATION_SCRIPT",
+  "data_dir": "vindrmammo_data/physionet.org/files/vindr-mammo/1.0.0",
+  "output_dir": "artifacts/data",
+  "scenario_name": "vindrmammo-data",
+  "annotations_path": "breast-level_annotations.csv",
+  "metadata_path": "metadata.csv",
+  "birads_threshold": 3,
+  "output_filename": "vindrmammo_metadata.jsonl",
+  "manufacturers": [
+    "SIEMENS"
+  ]
+}

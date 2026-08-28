@@ -1,0 +1,13 @@
+# Configuration for measuring low-level property changes from masked distortions / generated lesions
+# Usage: python exploration/anomaly_distortion_metrics.py --config config/anomaly_distortion_metrics.yaml
+
+# DATA PATHS
+original_dir: artifacts/data/vindrmammo/mame_preprocessed
+generated_dir: ./artifacts/synthetic_twirl_lesions/run_20260304_153710
+output_dir: ./artifacts/anomaly_distortion_metrics
+
+# Metadata CSV (null = auto-detect from generated_dir/lesion_metadata.csv)
+metadata_path: null
+
+# PROCESSING
+num_images: null  # Set to integer to limit number of images (null for all)

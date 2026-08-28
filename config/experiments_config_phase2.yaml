@@ -1,0 +1,129 @@
+seed: 537205661
+created: 2025-04-16-10-39-44
+artifacts_dir: artifacts
+project_dir: .
+experiment_name: claim-difficulty
+data:
+  data_dir: artifacts/data/vindrmammo
+  preprocessed_image_dir: mame_preprocessed
+  preprocessed_mask_dir: mame_masks
+  annotations_path: finding_annotations.csv
+  generated_metadata_paths:
+  - synthetic_combined/twirl/distortion/2026-07-11-a1p100-32-48/dataset_metadata.jsonl
+  - synthetic_combined/twirl/distortion/2026-07-11-a1p090-32-48/dataset_metadata.jsonl
+  - synthetic_combined/twirl/distortion/2026-07-11-a1p075-32-48/dataset_metadata.jsonl
+  - synthetic_combined/twirl/distortion/2026-07-11-a1p060-32-48/dataset_metadata.jsonl
+  - synthetic_combined/twirl/distortion/2026-07-11-a2c8020-32-48/dataset_metadata.jsonl
+  - synthetic_combined/twirl/distortion/2026-07-11-a2c9010-32-48/dataset_metadata.jsonl
+  - synthetic_combined/twirl/distortion/2026-07-11-bentangled-32-48/dataset_metadata.jsonl
+  samples_filename: training_split_metadata.jsonl
+  label_filter: null
+training:
+  output_dir: training
+  num_workers: 4
+  val_size: 0.2
+  device: cuda
+  wandb:
+    enabled: true
+    project: claim
+  dataset_parameterizations:
+    dataset_name: all
+  num_training_repetitions: 1
+  gradient_clip_val: 1.0
+  training_records: training_records.jsonl
+  intermediate_training_records: intermediate_training_records.jsonl
+  use_hyperparameter_tuning: false
+  hyperparameter_tuning:
+    batch_sizes:
+    - 8
+    - 16
+    learning_rates:
+    - 0.001
+    - 0.0003
+    weight_decays:
+    - 0.0
+    - 0.0001
+    base_channels:
+    - 4
+    - 16
+    - 32
+  models:
+  - dataset_type: vindrmammo
+    model_name: PretrainedMammoClassifier
+    training_params:
+      num_classes: 1
+      batch_size: 32
+      epochs: 20
+      lr: 0.0003
+      weight_decay: 0.0001
+      finetuning:
+        enabled: true
+        freeze_epochs: 2
+        warmup_epochs: 3
+        lr_head: 0.0005
+        lr_backbone: 5.0e-05
+        lr_min: 1.0e-06
+    model_params:
+      arch: convnext_tiny
+      pretrained: true
+      dropout: 0.3
+      use_patchify: false
+      original_image_size: 512
+      image_size: 512
+      normalize_input: false
+xai:
+  output_dir: xai
+  xai_records: xai_records.jsonl
+  intermediate_xai_records: intermediate_xai_records.jsonl
+  splits:
+  - test
+  max_samples: null
+  device: auto
+  integrated_gradient_baseline_value: 0.0
+  integrated_gradients_steps: 32
+  perturbation_n_samples: 2048
+  superpixel_n_segments: 1000
+  superpixel_compactness: 10.0
+  lrp_alpha: 2.0
+  lrp_beta: -1.0
+  save_numpy_attributions: true
+  methods:
+  - saliency
+  - input_x_gradient
+  - integrated_gradient
+  - random
+  - guided_backprop
+  - deep_lift
+  - gradient_shap
+  - sobel
+  - laplace
+xai_evaluation:
+  output_dir: xai_evaluation
+  evaluation_records: xai_evaluation_records.jsonl
+  intermediate_evaluation_records: intermediate_evaluation_records.jsonl
+analyses:
+  output_dir: analyses
+  analyses:
+  - model_accuracy_plot
+  - model_accuracy_all_splits_plot
+  - model_accuracy_grouped_bar_plot
+  - model_accuracy_heatmap
+  - model_loss_plot
+  - hyperparameter_summary
+  - xai_mass_accuracy_plot
+  - xai_mass_accuracy_heatmap
+  - xai_mass_accuracy_boxplot
+  - xai_mass_accuracy_boxplot_by_dataset
+  - xai_confidence_vs_mass_accuracy
+  - xai_discriminative_vs_distractor_plot
+  - xai_saliency_boxplot_by_dataset
+  - xai_saliency_lesion_vs_distortion
+  - xai_edge_salience_boxplot_by_dataset
+  - xai_edge_correspondence
+  - xai_summary
+  - xai_attribution_examples
+  - xai_attribution_overlay_examples
+  - combined_pair_examples
+  dataset_types:
+    2d_suppressor: {}
+    _nonlinear_suppressor: {}

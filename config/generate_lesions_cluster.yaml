@@ -1,0 +1,29 @@
+# Cluster configuration for synthetic lesion generation
+# Usage: python scripts/submit_hydra_job.py --config config/generate_lesions_cluster.yaml --mode generate_lesions --device gpu
+
+# CLUSTER DIRECTORIES (absolute host paths; set these for your own cluster)
+project_dir: /path/to/project
+data_dir: /path/to/data
+artifact_dir: /path/to/artifacts
+
+# DATA PATHS (relative to container mounts)
+input_dir: /mnt/data/vindrmammo/png
+output_dir: /mnt/artifacts/synthetic_lesions
+annotations_file: /mnt/data/vindrmammo/finding_annotations.csv  # Set to null to skip healthy filtering
+
+# MODEL
+model_id: Likalto4/inpainting_vindr_massbs16
+device: cuda
+
+# GENERATION PARAMETERS
+prompt: a mammogram with a lesion
+num_inference_steps: 40
+guidance_scale: 4.0
+
+# LESION PARAMETERS
+min_lesion_size: 16
+max_lesion_size: 32
+
+# PROCESSING
+num_images: null
+seed: 537205661

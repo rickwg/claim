@@ -1,0 +1,21 @@
+# Configuration for lesion visualization
+# Usage: python visualize_lesions.py --config config/visualize_lesions.yaml
+
+# DATA PATHS
+original_dir: artifacts/data/vindrmammo/mame_preprocessed
+generated_dir: ./artifacts/synthetic_lesions
+output_dir: ./artifacts/visualizations
+metadata_path: null  # If null, uses generated_dir/lesion_metadata.csv
+
+# VISUALIZATION PARAMETERS
+threshold: 10           # Threshold value for binary mask visualization
+figsize: [24, 4]        # Figure size (width, height) in inches
+dpi: 150                # Resolution for saved figures
+
+# SEAMLESS CLONING PARAMETERS
+seamless_padding: 5     # Extra padding around bbox for Poisson blending (pixels)
+
+# PROCESSING
+num_images: null        # Set to integer to limit number of images (null for all)
+
+

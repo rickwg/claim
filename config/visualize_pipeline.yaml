@@ -1,0 +1,15 @@
+mode: combined
+preprocessed_dir: ./artifacts/mame_preprocessed
+synthetic_dir: ./artifacts/synthetic_combined/2026-04-29-19-54-19-32-64
+output_dir: ./artifacts/visualizations/pipeline
+figsize_per_panel: [4, 4]
+dpi: 300
+num_images: null
+mask_overlay_alpha: 0.3
+contour_color: "#1b9e77"
+distortion_color: "#d95f02"
+contour_linewidth: 1.5
+taper_pixels: 15
+diff_threshold: 5
+morph_kernel_size: 3
+crop_padding: 30

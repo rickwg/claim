@@ -1,0 +1,332 @@
+seed: 537205661
+created: 2025-04-16-10-39-44
+artifacts_dir: artifacts
+project_dir: .
+experiment_name: claim
+data:
+  # Root directory for all data paths below.
+  # All other paths in this section are relative to data_dir.
+  data_dir: artifacts/data/vindrmammo
+
+  # Preprocessed mammography data (always used; healthy images come from here)
+  preprocessed_image_dir: mame_preprocessed
+  preprocessed_mask_dir: mame_masks
+  annotations_path: finding_annotations.csv
+
+  # Synthetic (generated) unhealthy image metadata (one path per generation run)
+  # Each entry produces a dataset_name derived from the path (e.g. "synthetic_twirl/2026-03-26-20-40")
+  # Paths are resolved relative to data_dir; the synthetic runs live under artifacts/, hence ../../
+  generated_metadata_paths:
+    - ../../synthetic_lesions/2026-06-10-10-02-13-32-48-blending/dataset_metadata.jsonl
+    - ../../synthetic_twirl/2026-06-10-10-02-13-32-48/dataset_metadata.jsonl
+    - ../../synthetic_combined/twirl/lesion/2026-07-08-20-00-46-32-48/dataset_metadata.jsonl
+    - ../../synthetic_combined/twirl/distortion/2026-07-08-20-00-46-32-48/dataset_metadata.jsonl
+    # Spherize mirror (same 32-48 baseline, distortion_type=spherize, amount -100 =
+    # spherize saturation threshold; identical warp to -160 but the minimal saturating
+    # value). All three spherize datasets are generated fresh at -100 from
+    # config/phase2/generate_{masked_distortion_sph100,combined_sph_lesdisc,combined_sph_distortion}.yaml
+    # (created tag 2026-07-22-08-59-52, set by setup_config bundle
+    # artifacts/data/cluster-2026-07-22-08-59-52). Standalone spherize is regenerated at
+    # -100 (the pre-existing 2026-06-10 run has {-40,-80,-160,-320}, no -100).
+    - ../../synthetic_spherize/2026-07-22-08-59-52-32-48/dataset_metadata.jsonl
+    - ../../synthetic_combined/spherize/lesion/2026-07-22-08-59-52-32-48/dataset_metadata.jsonl
+    - ../../synthetic_combined/spherize/distortion/2026-07-22-08-59-52-32-48/dataset_metadata.jsonl
+
+  # Output metadata filename (written under the experiment directory)
+  samples_filename: training_split_metadata.jsonl
+
+  # Optional label filter: [0] = healthy only, [1] = unhealthy only, null = all
+  label_filter:
+training:
+  output_dir: training
+  num_workers: 4
+  val_size: 0.2
+  device: cuda
+  # Self-contained datasets (e.g. combined lesion+distortion) carry their own
+  # healthy comparator; excluding the preprocessed-healthy pool from those
+  # partitions keeps the in-both-classes distractor non-predictive. Standalone
+  # datasets (which rely on the preprocessed pool for their healthy class) are
+  # auto-detected and left untouched.
+  exclude_preprocessed_when_self_contained: true
+  wandb:
+    enabled: true
+    project: claim
+    # entity: your-wandb-team
+    # tags: []
+  # Optional dataset parameterization runs on generated metadata fields.
+  # Values per field: scalar (one run), list (one run per value), or "all"
+  # (one run per unique value found in metadata).
+  #
+  # Multiple fields produce a cross-product of variants. Fields that do not
+  # exist in a dataset subset are skipped for that subset. For example:
+  #
+  #   dataset_name: all
+  #   twirl_angle: all
+  #   spherize_amount: all
+  #
+  # produces: twirl datasets × twirl_angle values, spherize datasets ×
+  # spherize_amount values, and lesion datasets with just dataset_name
+  # (since they have neither twirl_angle nor spherize_amount).
+  #
+  # dataset_name is always evaluated first to partition datasets before
+  # checking sub-parameters.
+  dataset_parameterizations:
+      dataset_name: all
+      twirl_angle: -160
+      spherize_amount: -100
+  #   dataset_name: all
+#  dataset_parameterizations: null
+  num_training_repetitions: 5
+  training_records: training_records.jsonl
+  intermediate_training_records: intermediate_training_records.jsonl
+  use_hyperparameter_tuning: false
+  hyperparameter_tuning:
+    batch_sizes:
+      - 8
+      - 16
+    learning_rates:
+      - 0.001
+      - 0.0003
+    weight_decays:
+      - 0.0
+      - 1.0e-04
+    base_channels:
+      - 4
+      - 16
+      - 32
+  models:
+    # NOTE: from-scratch models disabled for the CPU / convnext-only run (2026-07-03).
+    # Uncomment (or `git checkout` this file) to restore them for full GPU sweeps.
+    # - dataset_type: vindrmammo
+    #   model_name: PatchAggregateClassifier
+    #   training_params:
+    #     num_classes: 1
+    #     batch_size: 16
+    #     epochs: 100
+    #     lr: 0.001
+    #     weight_decay: 1.0e-04
+    #   model_params:
+    #     use_patchify: true
+    #     original_image_size: 512
+    #     image_size: 64
+    #     base_channels: 32
+    #     normalize_input: true
+    #     normalize_mean: 0.5
+    #     normalize_std: 0.5
+    #     blocks:
+    #       - 2
+    #       - 2
+    #       - 2
+    #       - 2
+    # - dataset_type: vindrmammo
+    #   model_name: ResNetLikeCNN
+    #   training_params:
+    #     num_classes: 1
+    #     batch_size: 16
+    #     epochs: 100
+    #     lr: 0.001
+    #     weight_decay: 1.0e-04
+    #   model_params:
+    #     use_patchify: false
+    #     original_image_size: 512
+    #     image_size: 512
+    #     base_channels: 32
+    #     normalize_input: true
+    #     normalize_mean: 0.5
+    #     normalize_std: 0.5
+    #     # Small localised lesions/distortions vanish under the default
+    #     # `stem: standard` (7x7 s2 + maxpool = 4x downsample): a 512px image
+    #     # collapses to a 16x16 map, so a ~30-80px feature becomes ~1-2px. Keep
+    #     # the feature alive with a lighter stem + a peak-preserving pool head:
+    #     #   stem: standard | gentle_strided | gentle   (4x | 2x | 1x downsample)
+    #     #   head_pooling: avg | max | gem              (avg dilutes sparse peaks)
+    #     # `gentle` at 512px is GPU-only (stage 0 runs full-resolution);
+    #     # `gentle_strided` (-> 32x32 map) is the tractable default, `gentle`
+    #     # (-> 64x64 map) the strongest.
+    #     stem: gentle_strided
+    #     head_pooling: max
+    #     blocks:
+    #       - 2
+    #       - 2
+    #       - 2
+    #       - 2
+    - dataset_type: vindrmammo
+      model_name: PretrainedMammoClassifier
+      training_params:
+        num_classes: 1
+        batch_size: 16
+        epochs: 10
+        lr: 3.0e-04
+        weight_decay: 1.0e-04
+        # Two-phase fine-tuning (head-only warmup -> unfreeze backbone with
+        # discriminative LRs + per-epoch linear-warmup then cosine decay),
+        # ported from the mammo-convnext-birads45 schedule.
+        #
+        # IMPORTANT: this only works for pretrained backbones, i.e. the
+        # PretrainedMammoClassifier model (arch: convnext_tiny / resnet18 /
+        # efficientnet_b4). Do NOT enable it for the from-scratch models
+        # (ResNetLikeCNN, PatchAggregateClassifier): a head-only warmup is
+        # meaningless when the backbone is randomly initialized, and those
+        # models keep their default single-phase OneCycleLR schedule.
+        #
+        # When enabled, lr above (and the hyperparameter-tuning lr sweep) is
+        # ignored; lr_head/lr_backbone below drive the schedule instead. The
+        # backbone param group uses weight_decay above; the head uses 0.
+        finetuning:
+          enabled: true
+          freeze_epochs: 5
+          warmup_epochs: 3
+          lr_head: 1.0e-3
+          lr_backbone: 3.0e-4
+          lr_min: 1.0e-6
+      model_params:
+        # ImageNet-pretrained backbone ported from mammo-convnext-birads45.
+        # Grayscale input is replicated to 3 channels inside the model.
+        # arch: convnext_tiny | resnet18 | efficientnet_b4
+        arch: convnext_tiny
+        pretrained: true
+        dropout: 0.3
+        use_patchify: false
+        original_image_size: 512
+        image_size: 512
+        normalize_input: false
+xai:
+  output_dir: xai
+  xai_records: xai_records.jsonl
+  intermediate_xai_records: intermediate_xai_records.jsonl
+  # Optional cross-evaluation: apply a model trained on one dataset to the test
+  # split of another dataset. Both datasets must have training records in THIS
+  # experiment (i.e. both were trained here), matched by their derived
+  # dataset_name. Each cross tuple loads the model_dataset_name checkpoint and
+  # computes attributions over the data_dataset_name test split; scoring uses the
+  # DATA dataset's ground truth, so this measures how a model trained WITHOUT a
+  # distractor attends the discriminator when the distractor appears at test time
+  # (setups: lesion-only model -> combined lesion-target test; distortion-only
+  # model -> combined distortion-target test). Cross tuples are tagged with
+  # model_source and a distinct dataset_variant_tag so analyses keeps them
+  # separate from the native model-on-own-data runs. Omit or leave empty to disable.
+  cross_evaluation:
+    - name: lesion_only
+      model_dataset_name: synthetic_lesions/2026-06-10-10-02-13-32-48-blending
+      data_dataset_name: synthetic_combined/twirl/lesion/2026-07-08-20-00-46-32-48
+    - name: distortion_only
+      model_dataset_name: synthetic_twirl/2026-06-10-10-02-13-32-48
+      data_dataset_name: synthetic_combined/twirl/distortion/2026-07-08-20-00-46-32-48
+    - name: lesion_only_spherize
+      model_dataset_name: synthetic_lesions/2026-06-10-10-02-13-32-48-blending
+      data_dataset_name: synthetic_combined/spherize/lesion/2026-07-22-08-59-52-32-48
+    - name: distortion_only_spherize
+      model_dataset_name: synthetic_spherize/2026-07-22-08-59-52-32-48
+      data_dataset_name: synthetic_combined/spherize/distortion/2026-07-22-08-59-52-32-48
+  # Optional runtime controls for xai/main.py.
+  splits:
+    - test
+  max_samples:
+  device: auto
+  integrated_gradient_baseline_value: 0.0
+  integrated_gradients_steps: 32
+  perturbation_n_samples: 2048
+  superpixel_n_segments: 1000
+  superpixel_compactness: 10.0
+  lrp_alpha: 2.0
+  lrp_beta: -1.0
+  save_numpy_attributions: true
+  methods:
+    - saliency
+    - input_x_gradient
+    - integrated_gradient
+    - random
+    - guided_backprop
+    - deep_lift
+    - gradient_shap
+    - sobel
+    - laplace
+xai_evaluation:
+  output_dir: xai_evaluation
+  evaluation_records: xai_evaluation_records.jsonl
+  intermediate_evaluation_records: intermediate_evaluation_records.jsonl
+analyses:
+  output_dir: analyses
+  # Supported analyses:
+  # - model_accuracy_plot
+  # - model_accuracy_all_splits_plot
+  # - model_accuracy_grouped_bar_plot
+  # - model_accuracy_heatmap
+  # - model_loss_plot
+  # - hyperparameter_summary
+  # - model_transfer_accuracy_summary
+  # - model_transfer_accuracy_plot
+  # - xai_mass_accuracy_plot
+  # - xai_mass_accuracy_heatmap
+  # - xai_mass_accuracy_boxplot
+  # - xai_mass_accuracy_boxplot_by_dataset
+  # - xai_relative_importance_boxplot
+  # - xai_relative_importance_boxplot_log
+  # - xai_relative_importance_dumbbell
+  # - xai_relative_importance_dumbbell_grouped
+  # - xai_performance_comparison
+  # - xai_confidence_vs_mass_accuracy
+  # - xai_discriminative_vs_distractor_plot
+  # - xai_saliency_boxplot_by_dataset
+  # - xai_saliency_lesion_vs_distortion
+  # - xai_edge_salience_boxplot_by_dataset
+  # - xai_edge_correspondence
+  # - xai_summary
+  # - xai_attribution_examples
+  # - xai_attribution_overlay_examples
+  # - combined_pair_examples
+  analyses:
+    - model_accuracy_plot
+    - model_accuracy_all_splits_plot
+    - model_accuracy_grouped_bar_plot
+    - model_accuracy_heatmap
+    - model_loss_plot
+    - hyperparameter_summary
+    - model_transfer_accuracy_summary
+    - model_transfer_accuracy_plot
+    - xai_mass_accuracy_plot
+    - xai_mass_accuracy_heatmap
+    - xai_mass_accuracy_boxplot
+    - xai_mass_accuracy_boxplot_by_dataset
+    - xai_relative_importance_boxplot
+    - xai_relative_importance_boxplot_log
+    - xai_discriminator_relative_importance_boxplot
+    - xai_discriminator_relative_importance_boxplot_log
+    - xai_distractor_relative_importance_boxplot
+    - xai_distractor_relative_importance_boxplot_log
+    - xai_relative_importance_disc_vs_distractor_boxplot
+    - xai_relative_importance_disc_vs_distractor_boxplot_log
+    - xai_relative_importance_dumbbell
+    - xai_relative_importance_dumbbell_grouped
+    - xai_relative_importance_dumbbell_grouped_twirl
+    - xai_relative_importance_dumbbell_grouped_spherize
+    - xai_relative_importance_dumbbell_mean
+    - xai_relative_importance_dumbbell_grouped_mean
+    - xai_relative_importance_dumbbell_grouped_twirl_mean
+    - xai_relative_importance_dumbbell_grouped_spherize_mean
+    - xai_separation_index
+    - xai_performance_comparison
+    - xai_confidence_vs_mass_accuracy
+    - xai_discriminative_vs_distractor_plot
+    - xai_saliency_boxplot_by_dataset
+    - xai_saliency_lesion_vs_distortion
+    - xai_edge_salience_boxplot_by_dataset
+    - xai_edge_correspondence
+    - xai_summary
+    - xai_attribution_examples
+    - xai_attribution_overlay_examples
+    - combined_pair_examples
+#  - _summary_explanation_performance_plot
+#  - _summary_explanation_performance_plot_low_dimensional_data
+#  - _explanation_performance_plot
+#  - _explanation_performance_plot_by_dataset
+#  - _explanation_plot
+#  - _explanation_per_feature_plot
+#  - _dataset_pairplot
+#  - _dataset_3d_plot
+#  - _model_generated_data_pairplot
+#  - _explanation_plot_tetris_global
+#  - explanation_plot_tetris_local
+  dataset_types:
+    2d_suppressor: { }
+    _nonlinear_suppressor: { }

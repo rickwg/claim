@@ -1,0 +1,36 @@
+# Configuration for synthetic lesion generation via inpainting
+# Usage: python data/generate_lesions.py --config config/generate_lesions.yaml
+# Exploration: python exploration/generate_lesions.py --config config/generate_lesions.yaml
+
+# DATA PATHS
+input_dir: artifacts/data/vindrmammo/mame_preprocessed
+output_dir: ./artifacts/synthetic_lesions
+annotations_file: vindrmammo_data/finding_annotations.csv  # Set to null to skip healthy filtering
+
+# MODEL
+model_id: Likalto4/inpainting_vindr_massbs16
+device: cpu  # cuda or cpu
+
+# GENERATION PARAMETERS
+prompt: a mammogram with a lesion
+num_inference_steps: 40
+guidance_scale: 4.0
+
+# LESION PARAMETERS
+min_lesion_size: 20  # Minimum lesion size in pixels
+max_lesion_size: 40  # Maximum lesion size in pixels
+
+# COMPOSITING
+compositing: true  # Set to false to save raw diffusion output without blending
+taper_pixels: 15  # Width of feathered taper zone at mask boundary (pixels)
+intensity_matching: true  # Set to false to skip intensity normalization during compositing
+intensity_match_dilate: 20  # Dilation radius for intensity matching neighborhood (pixels)
+
+# GROUND TRUTH MASK
+diff_threshold: 5  # Minimum absolute pixel difference for ground truth mask extraction
+morph_kernel_size: 3  # Kernel size for morphological cleanup of ground truth mask
+min_gt_fraction: 0.6  # Minimum ground truth patch size as fraction of min_lesion_size; dilate if smaller
+
+# PROCESSING
+num_images: null  # Set to integer to limit number of images (null for all)
+seed: 537205661  # Set to integer for reproducibility (null for random)

@@ -1,0 +1,75 @@
+# VindrMammo Preprocessing Configuration for MAM-E (Diffusion Models)
+# This configuration is optimized for training diffusion models like Stable Diffusion
+# for mammographic image generation and lesion inpainting
+seed: 537205661
+created: SET_BY_DATA_GENERATION_SCRIPT
+scenario_name: vindrmammo-mame
+
+# Input directory containing dicom/ and png/ subdirectories
+# This should point to the output of vindrmammo-py download
+input_dir: vindrmammo_data
+
+# Output directory for processed images
+output_dir: /mnt/data/mame_preprocessed
+
+# Output directory for lesion masks
+# Masks are always generated for all images:
+#   - Images with findings get masks from bounding box annotations
+#   - Healthy images (no findings) get all-zero masks
+mask_output_dir: /mnt/data/mame_masks
+
+# Target image size [width, height]
+# 512x512 is standard for Stable Diffusion 2.x
+target_size: [512, 512]
+
+# Maximum value for normalization according to Montoya et al. 2024
+# Pixel values will be clipped to this value and normalized to 0-255 uint8
+max_value: 3500.0
+
+# Number of parallel jobs (-1 = use all CPU cores)
+n_jobs: -1
+
+# Convert to RGB (3-channel) images
+# Set to true for Stable Diffusion which requires RGB input
+to_rgb: true
+
+# Filter images by finding category
+# Only images matching these categories will be processed.
+# Examples:
+#   - ['No Finding'] - Only healthy images
+#   - ['Mass'] - Only images with masses
+#   - ['Mass', 'Suspicious Calcification'] - Masses and calcifications
+#   - null - All images (no filtering)
+image_filter: null
+
+# Restrict preprocessing to specific scanner manufacturers
+# Use SIEMENS to match the MAM-E siemens15k preprocessing assumption
+manufacturer_filter: ['SIEMENS']
+
+# Keep only source PNGs whose original max intensity is in the siemens15k-like range
+# This avoids saturation when using fixed max_value=3500 normalization
+source_max_value_filter: 4095
+
+# Processing pipeline for MAM-E:
+# 1. Load 16-bit PNG from vindrmammo-py (with VOI LUT applied)
+# 2. Read laterality from DICOM metadata
+# 3. Flip right-sided images to left (standardization)
+# 4. Resize preserving aspect ratio to 512x512
+# 5. Center crop to exact 512x512
+# 6. Normalize to max_value=3500 and convert to uint8
+# 7. Convert grayscale to RGB (stack channels)
+# 8. Save as PNG in output_dir
+# 9. Generate masks for all images:
+#    - Lesion images: binary masks from bounding boxes
+#    - Healthy images: all-zero masks
+# 10. Save masks in mask_output_dir
+#
+# Output structure:
+# output_dir/
+#   ├── {study_id}/
+#   │   └── {image_id}.png (512x512 RGB)
+# mask_output_dir/
+#   ├── {study_id}/
+#   │   ├── {image_id}.png (first lesion or all-zero for healthy)
+#   │   ├── {image_id}_1.png (second lesion, if exists)
+#   │   └── ...

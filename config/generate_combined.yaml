@@ -1,0 +1,64 @@
+# Combined synthetic lesion + local-distortion generation.
+# For each healthy mammogram, produce one image with BOTH a diffusion-inpainted
+# lesion and a geometric local-distortion (disjoint regions). The combined image
+# is the unhealthy class; the healthy class is a single-modification image
+# matching the non-target artifact.
+# Usage: uv run python -m data.generate_combined --config config/generate_combined.yaml
+
+# DATA PATHS
+input_dir: artifacts/data/vindrmammo/mame_preprocessed
+output_dir: ./artifacts/synthetic_combined/{distortion_type}/{classification_target}
+annotations_file: vindrmammo_data/finding_annotations.csv
+
+# CLASSIFICATION
+# "lesion"     → combined (label 1) + distortion_only (label 0); distortion in both classes
+# "distortion" → combined (label 1) + lesion_only (label 0);     lesion in both classes
+classification_target: lesion
+
+# DISTORTION (single transformation per run)
+distortion_type: twirl       # "twirl" or "spherize"
+twirl_angle: -237            # used iff distortion_type == "twirl"
+spherize_amount: -67         # used iff distortion_type == "spherize"
+distortion_min_size: 60      # diameter, pixels
+distortion_max_size: 90      # diameter, pixels
+
+# LESION (diffusion inpainting)
+model_id: Likalto4/inpainting_vindr_massbs16
+device: cuda
+prompt: a mammogram with a lesion
+num_inference_steps: 40
+guidance_scale: 4.0
+lesion_min_size: 30          # bbox side, pixels
+lesion_max_size: 80          # bbox side, pixels
+compositing: true
+intensity_matching: true
+taper_pixels: 15
+intensity_match_dilate: 20
+
+# LESION GROUND-TRUTH SHAPE
+# "rectangular" (default) → GT = the same axis-aligned bbox passed to the diffusion model
+# "ellipse"               → GT = diff-extracted contour fitted to an ellipse
+lesion_ground_truth_shape: rectangular
+# The three knobs below are only used when lesion_ground_truth_shape == "ellipse":
+diff_threshold: 5
+morph_kernel_size: 3
+min_gt_fraction: 0.6
+
+# OVERLAP CONTROL (always enforced; surfaces a knob for the rejection budget)
+disjoint_max_attempts: 50    # rejection-sampling budget before skipping the source image
+
+# DIFFICULTY & CONFOUNDING REGIME (Phase 1 knobs; defaults = balanced, perfectly separable)
+# Axis 1 — imperfect discriminator: fraction of unhealthy (label 1) images that carry the discriminator.
+#   <1.0 leaves the remainder as label-1 images with no discriminative signal (label noise → test acc < 1).
+discriminator_presence_prob: 1.0
+# Axis 2 — distractor class-correlation: P(distractor present | label).
+#   (1.0, 1.0) = class-independent distractor (default);  (0.9, 0.1) = class-dependent confound.
+distractor_pos_rate: 1.0
+distractor_neg_rate: 1.0
+# Part B — entanglement: co-locate the discriminator on the distractor footprint (breaks spatial disjointness).
+entangle_discriminator: false
+
+# PROCESSING
+num_images: null             # Set to integer to limit number of images (null for all)
+seed: 537205661              # Set to integer for reproducibility (null for random)
+created: ""                  # Optional: appended to output_dir together with lesion-size range

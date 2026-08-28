@@ -1,0 +1,23 @@
+mode: boxed_samples
+project_dir: .
+output_dir: ./artifacts/visualizations/boxed_samples
+num_images: 10
+seed: 42
+upscale: 2
+box_linewidth: 3.0
+box_colors:
+  lesion: "#1b9e77"
+  distortion: "#d95f02"
+datasets:
+  - name: lesions
+    metadata_path: ./artifacts/synthetic_lesions/2026-07-02-11-33-50-32-48-blending/dataset_metadata.jsonl
+  - name: twirl
+    metadata_path: ./artifacts/synthetic_twirl/2026-07-02-11-33-50-32-48/dataset_metadata.jsonl
+  - name: spherize
+    metadata_path: ./artifacts/synthetic_spherize/2026-07-02-11-33-50-32-48/dataset_metadata.jsonl
+  - name: combined_lesion
+    metadata_path: ./artifacts/synthetic_combined/twirl/lesion/2026-07-02-11-33-50-32-48/dataset_metadata.jsonl
+    variant_filter: combined
+  - name: combined_twirl
+    metadata_path: ./artifacts/synthetic_combined/twirl/distortion/2026-07-02-11-33-50-32-48/dataset_metadata.jsonl
+    variant_filter: combined

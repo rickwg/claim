@@ -1,0 +1,46 @@
+# Training split metadata config
+# Combines preprocessed + generated data → training_split_metadata.jsonl
+#
+# Pipeline: preprocessing → data generation → main.py (this config) → training
+
+# Preprocessed images ({study_id}/{image_id}.png)
+preprocessed_image_dir: artifacts/data/vindrmammo/mame_preprocessed
+
+# Preprocessed masks ({study_id}/{image_id}.png)
+preprocessed_mask_dir: artifacts/data/vindrmammo/mame_masks
+
+# Path to finding_annotations.csv (used for labels and splits)
+annotations_path: vindrmammo_data/finding_annotations.csv
+
+# Output JSONL filename (saved under the experiment directory from experiments_config.yaml)
+output_path: training_split_metadata.jsonl
+
+# Paths to dataset_metadata.jsonl from generation runs (optional)
+# Each generation run (distortion, inpainting) produces its own JSONL.
+# List all that should be included in training.
+generated_metadata_paths:
+  # - synthetic_twirl/<created>/dataset_metadata.jsonl
+  # - synthetic_spherize/<created>/dataset_metadata.jsonl
+  # - synthetic_lesions/<created>/dataset_metadata.jsonl
+
+# Filter by label: [0] = healthy only, [1] = unhealthy only, null = all
+label_filter: null
+
+# Recommended directory structure for squashfs packaging:
+#
+# dataset.sqfs (mount at /mnt/data)
+# ├── images/
+# │   └── {study_id}/{image_id}.png
+# ├── masks/
+# │   └── {study_id}/{image_id}.png
+# └── training_split_metadata.jsonl
+#
+# The JSONL manifest serves as the index. Each line contains:
+#   {"image_path": "...", "mask_path": "...", "label": 0|1, "split": "training|test", "source": "preprocessed|generated"}
+#
+# To create the squashfs:
+#   mkdir -p dataset_root/images dataset_root/masks
+#   cp -r artifacts/data/vindrmammo/mame_preprocessed/* dataset_root/images/
+#   cp -r artifacts/data/vindrmammo/mame_masks/* dataset_root/masks/
+#   # regenerate manifest with image_dir=dataset_root/images, mask_dir=dataset_root/masks
+#   mksquashfs dataset_root dataset.sqfs -comp zstd

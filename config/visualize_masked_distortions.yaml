@@ -1,0 +1,15 @@
+# Configuration for visualizing masked distortions
+# Usage: python exploration/visualize_masked_distortions.py --config config/visualize_masked_distortions.yaml
+
+# DATA PATHS
+original_dir: artifacts/data/vindrmammo/mame_preprocessed
+generated_dir: ./artifacts/synthetic_twirl_lesions/run_20260304_153710
+output_dir: ./artifacts/visualizations_masked_distortions
+metadata_path: null  # If null, uses generated_dir/lesion_metadata.csv
+
+# VISUALIZATION PARAMETERS
+figsize: [12, 4]        # Figure size (width, height) in inches
+dpi: 150                # Resolution for saved figures
+
+# PROCESSING
+num_images: null        # Set to integer to limit number of images (null for all)

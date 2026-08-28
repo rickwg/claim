@@ -1,0 +1,39 @@
+# Configuration for synthetic lesion generation using geometric distortions
+# Usage: python data/generate_masked_distortion.py --config config/generate_masked_distortion.yaml
+# Exploration: python exploration/generate_masked_distortion.py --config config/generate_masked_distortion.yaml
+
+# DATA PATHS
+input_dir: artifacts/data/vindrmammo/mame_preprocessed
+# Constructed with selected transformation (e.g. synthetic_twirl, synthetic_spherize)
+output_dir: ./artifacts/synthetic_{transformation}
+annotations_file: vindrmammo_data/finding_annotations.csv  # Set to null to skip healthy filtering
+
+# TRANSFORMATION: "twirl", "spherize", or "all"
+# "all" generates both twirl and spherize in one run (separate output dirs).
+transformation: all
+# Optional explicit list (alternative to "all"), e.g. [twirl, spherize]
+# transformations:
+#   - twirl
+#   - spherize
+
+# TWIRL PARAMETERS (GIMP Twirl filter)
+# Use twirl_angles (list) for multiple values, or twirl_angle (scalar) for one.
+# Multiple values produce one image per value, with a param suffix in the filename.
+twirl_angles:
+  - [-10, -20, -40, -80, -160, -320]
+# twirl_angle: -70  # shorthand for a single value
+
+# SPHERIZE PARAMETERS (GIMP Pinch filter)
+# Negative = bulge/pop-out, Positive = pinch/dent
+# Use spherize_amounts (list) for multiple values, or spherize_amount (scalar) for one.
+spherize_amounts:
+  - [-10, -20, -40, -80, -160, -320]
+# spherize_amount: -17  # shorthand for a single value
+
+# LESION PARAMETERS
+min_lesion_size: 20  # Minimum lesion diameter in pixels
+max_lesion_size: 40  # Maximum lesion diameter in pixels
+
+# PROCESSING
+num_images: null  # Set to integer to limit number of images (null for all)
+seed: 537205661  # Set to integer for reproducibility (null for random)

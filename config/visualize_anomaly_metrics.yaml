@@ -1,0 +1,44 @@
+# Configuration for visualizing anomaly distortion metrics
+# Usage: python exploration/visualize_anomaly_metrics.py --config config/visualize_anomaly_metrics.yaml
+
+# DATA PATHS
+# Path to the metrics run directory (contains metrics.csv)
+metrics_dir: ./artifacts/anomaly_distortion_metrics/run_20260304_143043
+
+# For spatial heatmap overlays: paths to source images
+original_dir: artifacts/data/vindrmammo/mame_preprocessed
+generated_dir: ./artifacts/synthetic_twirl_lesions/run_20260304_142035
+
+# OUTPUT
+output_dir: ./artifacts/visualizations_anomaly_metrics
+
+# VISUALIZATION PARAMETERS
+figsize_bar: [14, 6]
+figsize_box: [14, 6]
+figsize_radar: [8, 8]
+figsize_heatmap: [10, 8]
+figsize_spatial: [20, 4]
+dpi: 150
+
+# Spatial heatmap overlay: number of sample images to render (null = 3)
+num_spatial_samples: 3
+
+# METRICS TO VISUALIZE
+# Metrics to include in visualizations (null = all available)
+# Change metrics available: pixel_mae, pixel_rmse, pixel_max_diff, sobel_mae, laplacian_mae, border_intensity_step_manip, border_pixel_mae_manip, border_intensity_step_diff, border_pixel_mae_diff
+# Quality metrics available: ssim, histogram_dist, local_contrast_diff
+visualize_change_metrics:
+  - pixel_mae
+  - pixel_rmse
+  - pixel_max_diff
+  - sobel_mae
+  - laplacian_mae
+  - border_intensity_step_manip
+  - border_pixel_mae_manip
+  - border_intensity_step_diff
+  - border_pixel_mae_diff
+
+visualize_quality_metrics:
+  - ssim
+  - histogram_dist
+#  - local_contrast_diff
